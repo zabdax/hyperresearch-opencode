@@ -1,0 +1,27 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile and import
+        run: |
+          python -m compileall -q .
+          python -c "import build_opencode, test_opencode, artifact_gate, patch_skip_log"
+
+      - name: Helper scripts
+        run: |
+          mkdir -p /tmp/hpr-smoke/research/runs/demo
+          echo '{"pipeline_tier":"light"}' > /tmp/hpr-smoke/research/runs/demo/prompt-decomposition.json
+          python patch_skip_log.py demo --root /tmp/hpr-smoke
+          echo '{}' > /tmp/hpr-smoke/research/runs/demo/polish-log.json
+          python artifact_gate.py demo --root /tmp/hpr-smoke
